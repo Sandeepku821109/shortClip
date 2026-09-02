@@ -59,6 +59,16 @@ export function ProcessingStatus({ job }: ProcessingStatusProps) {
 
         <div className="text-sm text-gray-400 space-y-1">
           <p>Job ID: {job.id}</p>
+          {job.sourceTitle && (
+            <p className="text-red-400 truncate">
+              Source: {job.sourceTitle}
+            </p>
+          )}
+          {job.sourceType === 'youtube' && job.sourceUrl && (
+            <p className="text-xs text-gray-500 truncate">
+              {job.sourceUrl}
+            </p>
+          )}
           {job.platform && (
             <p className="text-blue-400">
               Target: {platformNames[job.platform] || job.platform}

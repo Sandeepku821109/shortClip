@@ -30,4 +30,23 @@ export interface Job {
   clips: Clip[];
   platform?: string;
   clipDuration?: number;
+  sourceType?: 'upload' | 'youtube';
+  sourceUrl?: string;
+  sourceTitle?: string;
+}
+
+export interface YouTubeVideoInfo {
+  id: string;
+  title: string;
+  author: string;
+  authorId?: string;
+  durationSeconds: number;
+  durationLabel: string;
+  thumbnailUrl: string;
+  description?: string;
+  channelUrl?: string;
+  viewCount?: number;
+  uploadDate?: string;
+  url: string;
+  isLive?: boolean;
 }

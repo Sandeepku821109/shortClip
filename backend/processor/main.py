@@ -10,6 +10,7 @@ from ffmpeg_wrapper import FFmpegWrapper
 from clip_detector import ClipDetector
 from video_processor import VideoProcessor
 from captions import CaptionProvider
+from downloader import Downloader
 from models import ProcessingResult, PLATFORM_PRESETS
 from utils import setup_logging, log_structured
 
@@ -17,8 +18,10 @@ from utils import setup_logging, log_structured
 def parse_args():
     parser = argparse.ArgumentParser(description='Process video and generate clips')
     parser.add_argument('--job-id', required=True, help='Job ID')
-    parser.add_argument('--input', required=True, help='Input video path')
+    parser.add_argument('--input', required=True, help='Input video path (or local path after download)')
     parser.add_argument('--output', required=True, help='Output directory')
+    parser.add_argument('--input-url', default='', help='Optional remote URL to download first (e.g. YouTube)')
+    parser.add_argument('--ytdlp-path', default='yt-dlp', help='yt-dlp executable path')
     parser.add_argument('--max-clips', type=int, default=5, help='Maximum number of clips')
     parser.add_argument('--clip-duration', type=float, default=0, help='Desired clip length in seconds (e.g. 20, 30, 60)')
     parser.add_argument('--ffmpeg-path', default='ffmpeg', help='FFmpeg executable path')
@@ -46,11 +49,22 @@ def main():
         'Processing started',
         job_id=args.job_id,
         input=args.input,
+        input_url=args.input_url or None,
         output=args.output,
         platform=args.platform or 'universal'
     )
 
     try:
+        # If an input URL is provided, download it first
+        input_path = args.input
+        if args.input_url:
+            downloader = Downloader(ytdlp_path=args.ytdlp_path)
+            downloaded = downloader.download(args.input_url, args.output)
+            if not downloaded:
+                log_structured(logger, 'error', 'Failed to download input URL')
+                sys.exit(1)
+            input_path = downloaded
+
         # Initialize components
         ffmpeg = FFmpegWrapper(
             ffmpeg_path=args.ffmpeg_path,
@@ -60,8 +74,8 @@ def main():
         # Validate input video
         log_structured(logger, 'info', 'Probing video')
 
-        duration = ffmpeg.get_video_duration(args.input)
-        width, height = ffmpeg.get_video_dimensions(args.input)
+        duration = ffmpeg.get_video_duration(input_path)
+        width, height = ffmpeg.get_video_dimensions(input_path)
 
         log_structured(
             logger,
@@ -102,7 +116,7 @@ def main():
             'Detecting candidates',
             target_duration=target_duration
         )
-        candidates = detector.detect_candidates(args.input, duration)
+        candidates = detector.detect_candidates(input_path, duration)
 
         if not candidates:
             log_structured(logger, 'error', 'No suitable clips found')
@@ -120,7 +134,7 @@ def main():
 
         log_structured(logger, 'info', 'Generating clips')
         clips = processor.generate_clips(
-            input_path=args.input,
+            input_path=input_path,
             output_dir=args.output,
             candidates=candidates,
             job_id=args.job_id,

@@ -41,6 +41,9 @@ export function createJobsRouter(jobStore: JobStore): Router {
         error: job.error,
         createdAt: job.createdAt,
         sourceExpiresAt: job.sourceExpiresAt,
+        sourceType: job.sourceType || 'upload',
+        sourceUrl: job.sourceUrl || '',
+        sourceTitle: job.sourceTitle || '',
         platform: job.platform || '',
         clipDuration: job.clipDuration || 0,
         clips: job.clips.map((clip) => ({

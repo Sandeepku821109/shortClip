@@ -10,6 +10,7 @@ import { CleanupWorker } from './services/cleanup-worker';
 import { createUploadRouter } from './apis/upload';
 import { createJobsRouter } from './apis/jobs';
 import { createClipsRouter } from './apis/clips';
+import { createYouTubeRouter } from './apis/youtube';
 import { errorHandler } from './middleware/error-handler';
 
 const logger = new Logger('Server');
@@ -39,6 +40,7 @@ async function main() {
   app.use('/api/upload', createUploadRouter(jobStore, storage, jobRunner));
   app.use('/api/jobs', createJobsRouter(jobStore));
   app.use('/api/clips', createClipsRouter(jobStore, storage));
+  app.use('/api/youtube', createYouTubeRouter(jobStore, storage, jobRunner));
 
   // Health check
   app.get('/api/health', (req, res) => {

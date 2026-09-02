@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import { JobStore } from '../jobs/job-store';
 import { StorageProvider } from '../storage/storage-provider';
 import { PythonRunner } from './python-runner';
+import { youtubeService } from './youtube-service';
 import { Logger } from '../utils/logger';
 import { Job, Clip } from '../types';
 import { config } from '../config';
@@ -42,27 +43,46 @@ export class JobRunner {
         message: 'Processing queued',
       });
 
-      // Check if source file still exists
-      const sourceExists = await this.storage.exists(job.sourceFile);
-      if (!sourceExists) {
-        await this.jobStore.updateJob(jobId, {
-          status: 'failed',
-          error: 'Source file not found',
-        });
-        return;
-      }
+      await this.jobStore.updateJob(jobId, {
+        status: 'analyzing',
+        progress: 10,
+        message: job.sourceType === 'youtube' ? 'Downloading video from YouTube' : 'Analyzing video',
+      });
 
-      const inputPath = this.storage.getPath(job.sourceFile);
       const outputDir = this.storage.getPath(`temp/${jobId}`);
 
       // Create output directory
       await fs.mkdir(outputDir, { recursive: true });
 
-      await this.jobStore.updateJob(jobId, {
-        status: 'analyzing',
-        progress: 10,
-        message: 'Analyzing video',
-      });
+      let inputPath = '';
+
+      if (job.sourceType === 'youtube' && job.sourceUrl) {
+        // Download the YouTube video into the temp directory
+        const download = await youtubeService.downloadVideo(
+          job.sourceUrl,
+          outputDir,
+          'source'
+        );
+        inputPath = download.filePath;
+
+        await this.jobStore.updateJob(jobId, {
+          status: 'analyzing',
+          progress: 35,
+          message: 'Downloaded video, analyzing',
+          sourceTitle: download.info.title,
+        });
+      } else {
+        // Uploaded file path from storage
+        const sourceExists = await this.storage.exists(job.sourceFile);
+        if (!sourceExists) {
+          await this.jobStore.updateJob(jobId, {
+            status: 'failed',
+            error: 'Source file not found',
+          });
+          return;
+        }
+        inputPath = this.storage.getPath(job.sourceFile);
+      }
 
       // Run Python processor
       const result = await this.pythonRunner.runProcessor({
@@ -130,9 +150,16 @@ export class JobRunner {
       logger.info('Job completed successfully', { jobId, clipCount: clips.length });
     } catch (error) {
       logger.error('Job processing error', error);
+
+      const job = await this.jobStore.getJob(jobId);
+      const errMsg = error instanceof Error ? error.message : '';
+      const friendly = errMsg.includes('Invalid YouTube URL')
+        ? errMsg
+        : 'An unexpected error occurred during processing';
+
       await this.jobStore.updateJob(jobId, {
         status: 'failed',
-        error: 'An unexpected error occurred during processing',
+        error: friendly,
       });
     } finally {
       this.processingJobs.delete(jobId);

@@ -9,6 +9,7 @@ export interface PythonProcessOptions {
   jobId: string;
   inputPath: string;
   outputDir: string;
+  inputUrl?: string;
   maxClips?: number;
   platform?: string;
   clipDuration?: number;
@@ -35,6 +36,7 @@ export class PythonRunner {
       jobId,
       inputPath,
       outputDir,
+      inputUrl,
       maxClips = config.maxClipsPerJob,
       platform = '',
       clipDuration = 0,
@@ -51,6 +53,10 @@ export class PythonRunner {
       '--ffmpeg-path', config.ffmpegPath,
       '--ffprobe-path', config.ffprobePath,
     ];
+
+    if (inputUrl) {
+      args.push('--input-url', inputUrl);
+    }
 
     if (platform) {
       args.push('--platform', platform);

@@ -37,6 +37,19 @@ export const config = {
   // Rate limiting
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 min
   rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '10', 10),
+
+  // YouTube URL processing
+  // yt-dlp downloads the source video from a pasted YouTube URL
+  ytDlpPath: process.env.YTDLP_PATH || 'yt-dlp',
+
+  // YouTube Data API v3 upload (resumable uploads)
+  // Requires Google Cloud OAuth 2.0 credentials with the YouTube Data API enabled.
+  // See https://developers.google.com/youtube/v3/quickstart/js (or server-side flow)
+  youtubeApiKey: process.env.YOUTUBE_API_KEY || '',
+  youtubeClientId: process.env.YOUTUBE_CLIENT_ID || '',
+  youtubeClientSecret: process.env.YOUTUBE_CLIENT_SECRET || '',
+  // Comma-separated list of authorized user emails (optional access control)
+  youtubeAuthorizedEmails: (process.env.YOUTUBE_AUTHORIZED_EMAILS || '').split(',').map(s => s.trim()).filter(Boolean),
 };
 
 export const allowedMimeTypes = [

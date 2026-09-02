@@ -4,6 +4,9 @@ export interface Job {
   progress: number;
   message: string;
   sourceFile: string;
+  sourceType?: JobSourceType;
+  sourceUrl?: string;
+  sourceTitle?: string;
   sourceCreatedAt: string;
   sourceExpiresAt: string;
   clips: Clip[];
@@ -13,6 +16,8 @@ export interface Job {
   createdAt: string;
   updatedAt: string;
 }
+
+export type JobSourceType = 'upload' | 'youtube';
 
 export type JobStatus =
   | 'uploading'

@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { UploadZone } from './components/UploadZone';
+import { YouTubeInput } from './components/YouTubeInput';
 import { ProcessingStatus } from './components/ProcessingStatus';
 import { ClipGrid } from './components/ClipGrid';
 import { uploadVideo, getJob } from './api/client';
 import { Job } from './types/job';
 
+type SourceTab = 'upload' | 'youtube';
+
 function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [currentJob, setCurrentJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sourceTab, setSourceTab] = useState<SourceTab>('upload');
 
   const pollJob = useCallback(async (jobId: string) => {
     try {
@@ -40,6 +44,11 @@ function App() {
       setError(err.message || 'Upload failed');
     }
   };
+
+  const handleYoutubeSubmit = useCallback((jobId: string, _sourceTitle: string) => {
+    setError(null);
+    pollJob(jobId);
+  }, [pollJob]);
 
   const handleReset = () => {
     setCurrentJob(null);
@@ -80,7 +89,39 @@ function App() {
         {/* Main Content */}
         <div className="space-y-8">
           {!currentJob ? (
-            <UploadZone onUpload={handleUpload} isUploading={isUploading} />
+            <>
+              {/* Source selector */}
+              <div className="flex justify-center gap-2 max-w-md mx-auto">
+                <button
+                  onClick={() => setSourceTab('upload')}
+                  className={`
+                    flex-1 py-3 rounded-lg font-medium transition-colors
+                    ${sourceTab === 'upload'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}
+                  `}
+                >
+                  Upload File
+                </button>
+                <button
+                  onClick={() => setSourceTab('youtube')}
+                  className={`
+                    flex-1 py-3 rounded-lg font-medium transition-colors
+                    ${sourceTab === 'youtube'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}
+                  `}
+                >
+                  YouTube URL
+                </button>
+              </div>
+
+              {sourceTab === 'upload' ? (
+                <UploadZone onUpload={handleUpload} isUploading={isUploading} />
+              ) : (
+                <YouTubeInput onYoutubeSubmit={handleYoutubeSubmit} isProcessing={isUploading} />
+              )}
+            </>
           ) : (
             <>
               <ProcessingStatus job={currentJob} />
