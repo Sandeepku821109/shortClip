@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://your-railway-backend-url.up.railway.app/api/$1"
+      "destination": "https://short-clip-69t6.vercel.app/api/$1"
     }
   ]
 }
