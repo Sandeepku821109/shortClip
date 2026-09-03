@@ -1,6 +1,6 @@
 import os
 from typing import List
-from scenedetect import detect, ContentDetector, AdaptiveDetector
+from scenedetect.detectors import ContentDetector
 from models import ClipCandidate
 from utils import log_structured
 import logging
@@ -18,12 +18,61 @@ class ClipDetector:
         self.max_clips = max_clips
         self.target_duration = target_duration
         self.logger = logging.getLogger(__name__)
-    
+
     def detect_scenes(self, video_path: str) -> List[tuple]:
-        """Detect scene changes in video"""
+        """Detect scene changes in video.
+
+        Samples a subset of frames (frame_skip) so detection is fast even on
+        long videos, while still being accurate enough to pick good cut points.
+        """
         try:
-            # Use ContentDetector for scene change detection
-            scene_list = detect(video_path, ContentDetector(threshold=27.0))
+            from scenedetect import open_video, SceneManager
+            from scenedetect.detectors import ContentDetector
+
+            video = open_video(str(video_path))
+            video.reset()
+
+            # Estimate a frame_skip based on the video length so detection stays
+            # fast even on long videos. We sample roughly 2 frames per second.
+            duration_sec = float(video.duration.get_seconds()) if video.duration else 0.0
+            frame_rate = float(video.frame_rate) if video.frame_rate else 30.0
+            # Sample ~2 frames/second -> ~15x faster on a 30fps source.
+            frame_skip = max(0, int(frame_rate / 2.0) - 1)
+
+            scene_manager = SceneManager()
+            scene_manager.add_detector(
+                ContentDetector(
+                    threshold=27.0,
+                    min_scene_len=int(self.min_duration * frame_rate),
+                )
+            )
+
+            scene_manager.detect_scenes(
+                video,
+                show_progress=False,
+                frame_skip=frame_skip,
+            )
+
+            scene_list = scene_manager.get_scene_list()
+
+            # Release the capture source (some backends expose release/close).
+            for method in ('release', 'close'):
+                if hasattr(video, method):
+                    try:
+                        getattr(video, method)()
+                    except Exception:
+                        pass
+                    break
+
+            log_structured(
+                self.logger,
+                'info',
+                'Scene detection sampled',
+                frames_skipped=frame_skip,
+                duration_sec=round(duration_sec, 1),
+                scenes=len(scene_list),
+            )
+
             return scene_list
         except Exception as e:
             log_structured(

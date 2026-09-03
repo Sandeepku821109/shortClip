@@ -25,28 +25,13 @@ export interface Job {
   progress: number;
   message: string;
   error: string | null;
+  errorCode?: string;
   createdAt: string;
   sourceExpiresAt: string;
   clips: Clip[];
   platform?: string;
   clipDuration?: number;
-  sourceType?: 'upload' | 'youtube';
+  sourceType?: 'upload';
   sourceUrl?: string;
   sourceTitle?: string;
-}
-
-export interface YouTubeVideoInfo {
-  id: string;
-  title: string;
-  author: string;
-  authorId?: string;
-  durationSeconds: number;
-  durationLabel: string;
-  thumbnailUrl: string;
-  description?: string;
-  channelUrl?: string;
-  viewCount?: number;
-  uploadDate?: string;
-  url: string;
-  isLive?: boolean;
 }

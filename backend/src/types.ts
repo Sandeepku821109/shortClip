@@ -11,13 +11,14 @@ export interface Job {
   sourceExpiresAt: string;
   clips: Clip[];
   error: string | null;
+  errorCode?: string;
   platform: string;
   clipDuration: number;
   createdAt: string;
   updatedAt: string;
 }
 
-export type JobSourceType = 'upload' | 'youtube';
+export type JobSourceType = 'upload';
 
 export type JobStatus =
   | 'uploading'

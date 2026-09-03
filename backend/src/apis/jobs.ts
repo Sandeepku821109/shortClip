@@ -39,6 +39,7 @@ export function createJobsRouter(jobStore: JobStore): Router {
         progress: job.progress,
         message: job.message,
         error: job.error,
+        errorCode: job.errorCode || '',
         createdAt: job.createdAt,
         sourceExpiresAt: job.sourceExpiresAt,
         sourceType: job.sourceType || 'upload',

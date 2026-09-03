@@ -1,4 +1,4 @@
-import { Job, YouTubeVideoInfo } from '../types/job';
+import { Job } from '../types/job';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -65,87 +65,4 @@ export async function getPlatforms(): Promise<PlatformPreset[]> {
   }
   const data = await response.json();
   return data.platforms;
-}
-
-// ── YouTube URL → clips ─────────────────────────────────────────────
-export async function verifyYouTube(url: string): Promise<YouTubeVideoInfo> {
-  const response = await fetch(`${API_BASE}/youtube/verify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => null);
-    throw new Error(error?.error || 'Could not verify the YouTube video.');
-  }
-
-  return response.json();
-}
-
-export interface CreateYoutubeJobResult {
-  jobId: string;
-  status: string;
-  platform: string;
-  clipDuration: number;
-  sourceUrl: string;
-  sourceTitle: string;
-}
-
-export async function createYoutubeJob(
-  url: string,
-  platform?: string,
-  clipDuration?: number
-): Promise<CreateYoutubeJobResult> {
-  const response = await fetch(`${API_BASE}/youtube/create-job`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url, platform: platform || '', clipDuration: clipDuration || 0 }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => null);
-    throw new Error(error?.error || 'Could not start processing the YouTube video.');
-  }
-
-  return response.json();
-}
-
-// ── YouTube auto-upload (backend-only; requires OAuth credentials) ──
-export interface YoutubeUploadResult {
-  videoId: string;
-  url: string;
-}
-
-export async function uploadClipToYouTube(
-  source: string,
-  title: string,
-  options?: {
-    description?: string;
-    tags?: string[];
-    privacyStatus?: 'public' | 'unlisted' | 'private';
-    accessToken?: string;
-    refreshToken?: string;
-  }
-): Promise<YoutubeUploadResult> {
-  const response = await fetch(`${API_BASE}/youtube/upload`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      source,
-      title,
-      description: options?.description || '',
-      tags: options?.tags || [],
-      privacyStatus: options?.privacyStatus || 'private',
-      accessToken: options?.accessToken,
-      refreshToken: options?.refreshToken,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => null);
-    throw new Error(error?.error || 'YouTube upload failed.');
-  }
-
-  return response.json();
 }
